@@ -17,27 +17,26 @@ CustomerID	CustomerName	ContactName	Address	City	PostalCode	Country
 
 2. Select all the product names that are in the “Condiments” category
 
-SELECT ProductName, CategoryName
+SELECT ProductName
 FROM Products
 INNER JOIN Categories
 ON Products.CategoryID=Categories.CategoryID
 WHERE CategoryName="Condiments";
 
 Number of Records: 12
-
-ProductName	CategoryName
-Aniseed Syrup	Condiments
-Chef Anton's Cajun Seasoning	Condiments
-Chef Anton's Gumbo Mix	Condiments
-Grandma's Boysenberry Spread	Condiments
-Northwoods Cranberry Sauce	Condiments
-Genen Shouyu	Condiments
-Gula Malacca	Condiments
-Sirop d'érable	Condiments
-Vegie-spread	Condiments
-Louisiana Fiery Hot Pepper Sauce	Condiments
-Louisiana Hot Spiced Okra	Condiments
-Original Frankfurter grüne Soße	Condiments
+ProductName
+Aniseed Syrup
+Chef Anton's Cajun Seasoning
+Chef Anton's Gumbo Mix
+Grandma's Boysenberry Spread
+Northwoods Cranberry Sauce
+Genen Shouyu
+Gula Malacca
+Sirop d'érable
+Vegie-spread
+Louisiana Fiery Hot Pepper Sauce
+Louisiana Hot Spiced Okra
+Original Frankfurter grüne Soße
 
 3. Select the customer names who have never had an order
 
@@ -171,11 +170,10 @@ CustomerID	Total Count
 
 5. Select the SUM of all orders in 1997
 
-SELECT Count(OrderID) FROM [Orders]
-where OrderDate like '1997-%'
+SELECT Count(OrderID) FROM Orders
+where EXTRACT(YEAR from OrderDate)='1997'
 
-Count(OrderID)
-44
+We were unable to run this query because the tool keeps throwing a syntax error. We tried running the example query provided on the Extract apge and got the same syntax error.
 
 6. Select the name of the shipper, and the total number of orders shipped
 
@@ -248,9 +246,7 @@ Margaret	Peacock
 
 9. Select the name of the customer with the most expensive order
 
-SELECT Name, MAX(TotalPrice)
-FROM (
-SELECT Customers.CustomerName as Name, Orders.OrderID as ID, SUM(OrderDetails.Quantity * Products.Price) as TotalPrice
+SELECT Customers.CustomerName as Name
 FROM Customers
 JOIN Orders
 ON Customers.CustomerID=Orders.CustomerID
@@ -259,16 +255,17 @@ ON Orders.OrderID=OrderDetails.OrderID
 INNER JOIN Products
 ON Products.ProductID = OrderDetails.ProductID
 Group by OrderDetails.OrderID
-ORDER BY TotalPrice Desc);
+ORDER BY SUM(OrderDetails.Quantity * Products.Price) Desc
+LIMIT 1;
 
 Number of Records: 1
-Name	MAX(TotalPrice)
-Queen Cozinha	15353.6
+Name
+Queen Cozinha
 
 
 10. Select all the product names that are in the most expensive order
 
-SELECT * FROM Products
+SELECT Products.ProductName FROM Products
 INNER JOIN OrderDetails
 ON Products.ProductID=OrderDetails.ProductID
 WHERE OrderDetails.OrderID=(SELECT OrderDetails.OrderID
@@ -280,11 +277,11 @@ ORDER BY SUM(OrderDetails.Quantity * Products.Price) Desc
 LIMIT 1);
 
 Number of Records: 4
-ProductID	ProductName	SupplierID	CategoryID	Unit	Price	OrderDetailID	OrderID	Quantity
-20	Sir Rodney's Marmalade	8	3	30 gift boxes	81	331	10372	12
-38	Côte de Blaye	18	1	12 - 75 cl bottles	263.5	332	10372	40
-60	Camembert Pierrot	28	4	15 - 300 g rounds	34	333	10372	70
-72	Mozzarella di Giovanni	14	4	24 - 200 g pkgs.	34.8	334	10372	42
+ProductName
+Sir Rodney's Marmalade
+Côte de Blaye
+Camembert Pierrot
+Mozzarella di Giovanni
 
 11. Select the name of the employee with the least amount of orders
 
@@ -293,27 +290,20 @@ FROM Employees
 LEFT JOIN Orders
 ON Employees.EmployeeID=Orders.EmployeeID
 GROUP BY LastName
-ORDER BY TotalOrders;
+ORDER BY TotalOrders
+LIMIT 1;
 
-Number of Records: 10
+Number of Records: 1
 FirstName	LastName	TotalOrders
 Adam	West	0
-Anne	Dodsworth	6
-Steven	Buchanan	11
-Robert	King	14
-Michael	Suyama	18
-Andrew	Fuller	20
-Laura	Callahan	27
-Nancy	Davolio	29
-Janet	Leverling	31
-Margaret	Peacock	40
 
 12. Select the number of orders made in each month sorted by the number of orders
 
-//This is not working!! :(
+Because Extract function's not working, we were unable to vaildate this one, but we think this is what it should be. Is Group By what we were missing before?
 
-SELECT DATEPART(m,OrderDate) AS OrderMonth, COUNT(Orders.OrderID)
+SELECT EXTRACT(MONTH FROM OrderDate) AS OrderMonth, COUNT(Orders.OrderID)
 FROM Orders
+GROUP BY OrderMonth
 ORDER BY COUNT Desc;
 
 13. Select the countries and the number of orders from each country sorted descending
@@ -351,55 +341,31 @@ Poland	1
 
 14. Select the country that has the most products
 
-SELECT Country, COUNT(Products.ProductName) AS TotalProducts
-FROM Customers
-INNER JOIN Orders
-ON Customers.CustomerID=Orders.CustomerID
-INNER JOIN OrderDetails
-ON Orders.OrderID=OrderDetails.OrderID
+SELECT Country
+FROM Suppliers
 INNER JOIN Products
-ON Products.ProductID=OrderDetails.ProductID
+ON Suppliers.SupplierID=Products.SupplierID
 GROUP BY Country
-ORDER BY TotalProducts Desc;
+ORDER BY COUNT(Products.ProductID) Desc
+LIMIT 1;
 
-Number of Records: 21
-Country	TotalProducts
-USA	76
-Germany	74
-Brazil	55
-France	44
-Austria	39
-UK	28
-Canada	26
-Venezuela	22
-Ireland	21
-Mexico	20
-Spain	18
-Sweden	18
-Finland	15
-Denmark	14
-Italy	13
-Switzerland	12
-Portugal	9
-Belgium	6
-Norway	4
-Argentina	2
-Poland	2
+Number of Records: 1
+Country
+USA
 
 15. Select the best selling product, the total number of orders, and gross revenue
 
-SELECT Product, (TotalQty*Price) AS GrossRevenue, Orders, TotalQty
-FROM
-(SELECT Products.ProductName AS Product, Products.Price AS Price, COUNT(OrderDetails.OrderID) AS Orders, SUM(OrderDetails.Quantity) AS TotalQty
+SELECT Products.ProductName AS Product, COUNT(OrderDetails.OrderID) AS Orders, SUM(OrderDetails.Quantity)*Products.Price AS GrossRevenue
 FROM Products
 INNER JOIN OrderDetails
 ON Products.ProductID=OrderDetails.ProductID
 GROUP BY Products.ProductName
-ORDER BY Orders Desc)
+ORDER BY Orders Desc
 LIMIT 1;
 
 Number of Records: 1
-Product	GrossRevenue	Orders	TotalQty
-Gorgonzola Telino	5725	14	458
+Product	Orders	GrossRevenue
+Gorgonzola Telino	14	5725
+
 
 
